@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ドリームフォーメーションメーカー</title>
+
+  <!-- かわいい丸文字フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- html2canvas CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --pink: #ffb3d9;
+      --pink-strong: #ff7fc8;
+      --peach: #ffd3c2;
+      --mint: #c8f5e1;
+      --sky: #cfe6ff;
+      --lav: #ead8ff;
+      --text: #5a4b66;
+      --shadow: 0 10px 30px rgba(255, 128, 200, 0.25);
+      --card: #fff9fd;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "M PLUS Rounded 1c", system-ui, sans-serif;
+      background: radial-gradient(circle at 10% 10%, #fff5fb 0%, #fef2ff 35%, #f7fbff 70%, #f3fffb 100%);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 18px 12px 6px;
+    }
+
+    .hero h1 {
+      font-size: clamp(24px, 5vw, 38px);
+      margin: 0 0 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: clamp(12px, 3.4vw, 16px);
+      opacity: 0.9;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 2px solid #ffe6f2;
+    }
+
+    /* ステージ */
+    .stage-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .stage {
+      background:
+        radial-gradient(circle at 10% 10%, #fff 0%, #fff8fd 45%, #fdf5ff 100%);
+      border-radius: 22px;
+      border: 2px dashed #ffd3eb;
+      padding: 18px 12px 14px;
+      position: relative;
+    }
+
+    .row {
+      display: grid;
+      gap: 10px;
+      margin: 10px 0;
+      justify-content: center;
+    }
+
+    .row.front { grid-template-columns: repeat(3, 70px); }
+    .row.middle { grid-template-columns: repeat(6, 58px); }
+    .row.back { grid-template-columns: repeat(9, 52px); }
+
+    .slot {
+      width: 100%;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      border: 2px dashed #ffc6e3;
+      background: linear-gradient(180deg, #fff, #fff3fb);
+      display: grid;
+      place-items: center;
+      position: relative;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .slot.is-drop {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 18px rgba(255, 140, 200, 0.25);
+      border-color: var(--pink-strong);
+    }
+
+    /* センター特別枠 */
+    .slot.center {
+      border: 3px solid #ff8fd1;
+      background:
+        radial-gradient(circle at 30% 30%, #fff 0%, #ffeaf6 45%, #ffd4ec 100%);
+      box-shadow: 0 0 0 6px rgba(255, 210, 235, 0.6), 0 10px 25px rgba(255, 125, 190, 0.35);
+    }
+
+    .slot.center::after {
+      content: "✨";
+      position: absolute;
+      top: -10px;
+      right: -6px;
+      font-size: 18px;
+    }
+
+    /* メンバー */
+    .member {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(160deg, var(--lav), var(--sky));
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      color: #5c3d6a;
+      border: 2px solid #fff;
+      box-shadow: 0 6px 14px rgba(180, 150, 255, 0.25);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      transition: transform 0.12s ease;
+    }
+
+    .member:active { cursor: grabbing; transform: scale(0.98); }
+
+    .member.pool {
+      width: 54px;
+      height: 54px;
+      flex: 0 0 auto;
+    }
+
+    .pool-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 8px;
+      min-height: 80px;
+      border: 2px dashed #d6f2ff;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f9fdff, #f6fffd);
+    }
+
+    .pool-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .share-wrap {
+      display: grid;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .share-btn {
+      background: linear-gradient(90deg, var(--pink), var(--peach));
+      border: none;
+      color: #5a2b46;
+      font-weight: 900;
+      font-size: 16px;
+      padding: 14px 18px;
+      border-radius: 999px;
+      box-shadow: 0 10px 20px rgba(255, 140, 200, 0.35);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .share-btn:hover { transform: translateY(-1px) scale(1.01); }
+    .share-btn:active { transform: translateY(0); }
+
+    .preview {
+      display: none;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .preview img {
+      width: min(100%, 420px);
+      border-radius: 18px;
+      border: 3px solid #ffe2f0;
+      box-shadow: var(--shadow);
+    }
+
+    .tips {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .drag-ghost {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(160deg, var(--lav), var(--sky));
+      border: 2px solid #fff;
+      box-shadow: 0 12px 20px rgba(120, 100, 220, 0.3);
+      color: #5c3d6a;
+      font-weight: 700;
+    }
+
+    @media (min-width: 860px) {
+      .layout {
+        grid-template-columns: 1.1fr 0.9fr;
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="hero">
+      <h1>ドリームフォーメーションメーカー</h1>
+      <p>推しの理想選抜を作って、#ドリームフォーメーション #私だけの選抜 をシェアしよう！</p>
+    </div>
+
+    <div class="layout">
+      <section class="panel stage-wrap">
+        <div class="stage-title">🎀 ステージ（フォーメーション）</div>
+
+        <!-- ここがキャプチャ対象 -->
+        <div id="stage-capture" class="stage">
+          <div class="row front">
+            <div class="slot"></div>
+            <div class="slot center"></div>
+            <div class="slot"></div>
+          </div>
+
+          <div class="row middle">
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          </div>
+
+          <div class="row back">
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="pool-title">💫 メンバー待機列（ドラッグして配置）</div>
+        <div id="pool" class="pool-wrap"></div>
+
+        <div class="share-wrap" style="margin-top: 16px;">
+          <button id="shareBtn" class="share-btn">フォーメーションをXでシェア</button>
+          <div class="tips">画像が生成されたらプレビューが表示されます。Xの画面が自動で開きます。</div>
+
+          <div id="preview" class="preview">
+            <img id="previewImg" alt="フォーメーション画像プレビュー"/>
+            <div>
+              <a id="downloadLink" download="dream-formation.png">画像をダウンロード</a>
+              <div class="tips">画像は端末へ保存してXに添付できます。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ===== メンバー画像・名前の差し替え場所 =====
+    // ここを好きな名前や画像URLに変えると、メンバーの見た目が差し替わります。
+    // 例: { name: "A", image: "https://example.com/a.png" }
+    const membersData = [
+      { name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }, { name: "E" },
+      { name: "F" }, { name: "G" }, { name: "H" }, { name: "I" }, { name: "J" },
+      { name: "K" }, { name: "L" }, { name: "M" }, { name: "N" }, { name: "O" },
+      { name: "P" }, { name: "Q" }, { name: "R" }
+    ];
+
+    const pool = document.getElementById("pool");
+    const slots = Array.from(document.querySelectorAll(".slot"));
+    const shareBtn = document.getElementById("shareBtn");
+    const preview = document.getElementById("preview");
+    const previewImg = document.getElementById("previewImg");
+    const downloadLink = document.getElementById("downloadLink");
+
+    const createMember = (data) => {
+      const el = document.createElement("div");
+      el.className = "member pool";
+      el.textContent = data.name;
+
+      // 画像を使いたい場合はここで背景画像を設定します
+      // 例: el.style.backgroundImage = `url(${data.image})`;
+      //     el.style.backgroundSize = "cover";
+      //     el.style.backgroundPosition = "center";
+      //     el.textContent = ""; // 画像にしたら文字は消す
+      if (data.image) {
+        el.style.backgroundImage = `url(${data.image})`;
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+        el.textContent = "";
+      }
+      return el;
+    };
+
+    membersData.forEach((m) => pool.appendChild(createMember(m)));
+
+    // ===== ドラッグ&ドロップ（タッチ対応） =====
+    let draggingEl = null;
+    let ghost = null;
+    let originContainer = null;
+
+    const createGhost = (el) => {
+      const g = document.createElement("div");
+      g.className = "drag-ghost";
+      g.textContent = el.textContent || " ";
+      if (el.style.backgroundImage) {
+        g.style.backgroundImage = el.style.backgroundImage;
+        g.style.backgroundSize = "cover";
+        g.style.backgroundPosition = "center";
+        g.textContent = "";
+      }
+      document.body.appendChild(g);
+      return g;
+    };
+
+    const onPointerDown = (e) => {
+      const target = e.target.closest(".member");
+      if (!target) return;
+
+      draggingEl = target;
+      originContainer = target.parentElement;
+
+      ghost = createGhost(target);
+      ghost.style.left = e.clientX + "px";
+      ghost.style.top = e.clientY + "px";
+
+      target.style.opacity = "0.2";
+      target.setPointerCapture?.(e.pointerId);
+    };
+
+    const clearDropHints = () => slots.forEach(s => s.classList.remove("is-drop"));
+
+    const onPointerMove = (e) => {
+      if (!draggingEl || !ghost) return;
+      ghost.style.left = e.clientX + "px";
+      ghost.style.top = e.clientY + "px";
+
+      clearDropHints();
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const slot = el?.closest(".slot");
+      if (slot) slot.classList.add("is-drop");
+    };
+
+    const onPointerUp = (e) => {
+      if (!draggingEl) return;
+
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const slot = el?.closest(".slot");
+      const droppedInPool = el?.closest("#pool");
+
+      clearDropHints();
+
+      if (slot) {
+        if (slot.children.length === 0) {
+          slot.appendChild(draggingEl);
+          draggingEl.classList.remove("pool");
+          draggingEl.style.width = "100%";
+          draggingEl.style.height = "100%";
+        } else {
+          // すでにメンバーがいる場合は元の場所へ戻す
+          originContainer.appendChild(draggingEl);
+        }
+      } else if (droppedInPool) {
+        pool.appendChild(draggingEl);
+        draggingEl.classList.add("pool");
+        draggingEl.style.width = "";
+        draggingEl.style.height = "";
+      } else {
+        originContainer.appendChild(draggingEl);
+      }
+
+      draggingEl.style.opacity = "1";
+      draggingEl.releasePointerCapture?.(e.pointerId);
+
+      ghost?.remove();
+      ghost = null;
+      draggingEl = null;
+      originContainer = null;
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+
+    // ===== 画像生成 & Xシェア =====
+    shareBtn.addEventListener("click", async () => {
+      const stage = document.getElementById("stage-capture");
+
+      const canvas = await html2canvas(stage, {
+        backgroundColor: null,
+        scale: 2
+      });
+
+      const dataUrl = canvas.toDataURL("image/png");
+      previewImg.src = dataUrl;
+      downloadLink.href = dataUrl;
+      preview.style.display = "grid";
+
+      const text = "私の理想選抜が完成！ #ドリームフォーメーション #私だけの選抜";
+      const shareUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(text);
+      window.open(shareUrl, "_blank");
+    });
+  </script>
+</body>
+</html>
